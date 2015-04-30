@@ -790,10 +790,9 @@ sub action {
 		next if $force && $testname eq "skip";
 
 		my $testcommand=findcommand($testname, $dir, $topdir, $subdir, $is_checkout);
-
 		if (defined $testcommand) {
 			my $ret=runsh "$testname test", $topdir, $subdir,
-				$testcommand, [$action],
+				$testcommand, [$action, @ARGV],
 				sub { system(shift()) };
 			if ($ret != 0) {
 				if (($? & 127) == 2) {
