@@ -267,6 +267,18 @@ of its parent directories.
 Force mr to act on repositories that would normally be skipped due to their
 configuration.
 
+=item -l
+
+=item --filter regexp
+
+Only work on directories whose absolute path matches this regular expression.
+
+=item -x
+
+=item --skip regexp
+
+Skip directories whose absolute path matches this regular expression.
+
 =item -v
 
 =item --verbose
@@ -595,6 +607,8 @@ my $minimal=0;
 my $quiet=0;
 my $stats=0;
 my $force=0;
+my $skip_regex;
+my $filter_regex;
 my $insecure=0;
 my $interactive=0;
 my $max_depth;
@@ -1123,6 +1137,12 @@ sub repodir {
 	return $ret;
 }
 
+sub skiprepo {
+        my $dir=shift;
+        $dir=~s/\/$//;
+        return (defined $filter_regex && $dir!~"$filter_regex") || (defined $skip_regex && $dir=~"$skip_regex");
+}
+
 # Figure out which repos to act on.  Returns a list of array refs
 # in the format:
 #
@@ -1139,6 +1159,7 @@ sub selectrepos {
 		$dir.="/" unless $dir=~/\/$/;
 		$d.="/" unless $d=~/\/$/;
 		next if $dir ne $d && $dir !~ /^\Q$d\E/;
+		next if skiprepo($dir);
 		if (defined $max_depth) {
 			my @a=split('/', $dir);
 			my @b=split('/', $d);
@@ -1152,12 +1173,13 @@ sub selectrepos {
 		foreach my $repo (reverse repolist()) {
 			my $topdir=$repo->{topdir};
 			my $subdir=$repo->{subdir};
-			
+
 			next if $subdir eq 'DEFAULT';
 			my $dir=repodir($repo);
 			my $d=$directory;
 			$dir.="/" unless $dir=~/\/$/;
 			$d.="/" unless $d=~/\/$/;
+			next if skiprepo($dir);
 			if ($d=~/^\Q$dir\E/) {
 				push @repos, [$dir, $topdir, $subdir];
 				last;
@@ -1878,6 +1900,8 @@ sub getopts {
 		"c|config=s" => sub { $ENV{MR_CONFIG}=$_[1]; $config_overridden=1 },
 		"p|path" => sub { }, # now default, ignore
 		"f|force" => \$force,
+		"l|filter=s" => sub { $filter_regex=$_[1] },
+		"x|skip=s" => sub { $skip_regex=$_[1] },
 		"v|verbose" => \$verbose,
 		"m|minimal" => \$minimal,
 		"q|quiet" => \$quiet,
