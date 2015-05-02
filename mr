@@ -1322,12 +1322,25 @@ sub loadconfig {
 			$configfiles{$dir}=$f;
 		}
 
-		# copy in defaults from first parent
+		# prepare list of parent directories to look for config
+		my @parents;
 		my $parent=$dir;
 		while ($parent=~s/^(.*\/)[^\/]+\/?$/$1/) {
 			if ($parent eq '/') {
 				$parent="";
+				last;
 			}
+			push @parents, "$parent";
+		}
+
+		# Add $HOMEDIR_MR_CONFIG at the end of the lookup path
+		push @parents, abs_path($HOME_MR_CONFIG=~/^(.*\/)[^\/]+$/).'/';
+
+		# Add "" as a last resort. It stores config from the DATA section of this file
+		push @parents, "";
+
+		# copy in defaults from first parent
+		foreach my $parent (@parents) {
 			if (exists $config{$parent} &&
 			    exists $config{$parent}{DEFAULT}) {
 				$config{$dir}{DEFAULT}={ %{$config{$parent}{DEFAULT}} };
