@@ -1339,8 +1339,14 @@ sub loadconfig {
 		# Add "" as a last resort. It stores config from the DATA section of this file
 		push @parents, "";
 
+		$config{$dir}={};
 		# copy in defaults from first parent
 		foreach my $parent (@parents) {
+			# make sure parent config is loaded
+			if ((! exists $config{$parent}) && -e "$parent/.mrconfig") {
+				loadconfig("$parent/.mrconfig");
+			}
+
 			if (exists $config{$parent} &&
 			    exists $config{$parent}{DEFAULT}) {
 				$config{$dir}{DEFAULT}={ %{$config{$parent}{DEFAULT}} };
